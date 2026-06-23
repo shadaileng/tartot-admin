@@ -93,7 +93,9 @@ tarot-admin/
 ├── docs/
 │   ├── PLAN.md               # 本文档
 │   ├── API.md                # 后端 API 对接文档
-│   └── ARCHITECTURE.md       # 架构设计文档
+│   ├── ARCHITECTURE.md       # 架构设计文档
+│   ├── ADMIN_USERS_PLAN.md   # 用户管理页面规划
+│   └── ADMIN_LOGIN_PLAN.md   # Admin 登录体系规划
 └── src/
     ├── main.ts / App.vue / style.css / env.d.ts
     ├── api/index.ts
