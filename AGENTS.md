@@ -12,7 +12,10 @@
 - **健康监控**：Gemini API 状态 + 缓存/浏览器池可视化
 - **指标可视化**：Prometheus 指标解析 + Chart.js 图表
 - **配置查看**：环境变量列表（按类别分组，API Key 脱敏）
+- **用户管理**：用户列表查看、搜索、请求统计、详情弹窗
+- **管理员管理**（仅 admin 角色可见）：管理员列表、新增/编辑/删除
 - **主题切换**：暗色/亮色，localStorage 持久化
+- **认证系统**：JWT 登录、密码修改、首次登录强制改密、角色权限控制
 
 ## 技术栈
 
@@ -62,13 +65,14 @@ tarot-admin/
     │   └── index.ts              # 5 个路由配置 + beforeEach 标题更新
     │
     ├── composables/
+    │   ├── useAuth.ts           # 管理员认证（JWT 登录/登出/改密/权限）
     │   ├── useTheme.ts           # 暗色/亮色切换 + localStorage 持久化
     │   └── useHealth.ts          # 健康数据轮询（5-10s 间隔）
     │
     ├── components/
     │   ├── layout/
     │   │   ├── AppLayout.vue     # 主布局（侧边栏 + 顶栏 + 内容区）
-    │   │   ├── Sidebar.vue       # 侧边栏导航（5 个路由链接 + 图标）
+    │   │   ├── Sidebar.vue       # 侧边栏导航（7 个路由链接 + 角色权限过滤）
     │   │   ├── TopBar.vue        # 顶栏（页面标题）
     │   │   └── ThemeToggle.vue   # 主题切换按钮（太阳/月亮图标）
     │   │
@@ -89,20 +93,28 @@ tarot-admin/
     └── views/
         ├── DashboardView.vue     # 仪表盘页面
         ├── LogsView.vue          # 日志查看页面
-        ├── HealthView.vue        # 健康监控页面
+        ├── HealthView.vue       # 健康监控页面
         ├── MetricsView.vue       # 指标可视化页面（Chart.js 柱状图）
-        └── ConfigView.vue        # 配置查看页面（环境变量分组展示）
+        ├── ConfigView.vue        # 配置查看页面（环境变量分组展示）
+        ├── UsersView.vue         # 用户管理页面（列表/搜索/详情弹窗）
+        ├── AdminsView.vue        # 管理员管理页面（仅 admin 角色可见）
+        ├── LoginView.vue         # 管理员登录页面
+        └── ChangePasswordView.vue # 修改密码页面（首次登录强制跳转）
 ```
 
 ## 路由/页面结构
 
-| 路径 | 名称 | 说明 |
-|------|------|------|
-| `/` | `dashboard` | 仪表盘（默认首页） |
-| `/logs` | `logs` | 日志查看 |
-| `/health` | `health` | 健康监控 |
-| `/metrics` | `metrics` | 指标可视化 |
-| `/config` | `config` | 配置查看 |
+| 路径 | 名称 | 说明 | 权限 |
+|------|------|------|------|
+| `/login` | `login` | 管理员登录 | 无需登录（已登录自动跳转） |
+| `/change-password` | `change-password` | 修改密码 | 需登录（首次登录强制跳转） |
+| `/` | `dashboard` | 仪表盘（默认首页） | 需登录 |
+| `/logs` | `logs` | 日志查看 | 需登录 |
+| `/health` | `health` | 健康监控 | 需登录 |
+| `/metrics` | `metrics` | 指标可视化 | 需登录 |
+| `/config` | `config` | 配置查看 | 需登录 |
+| `/users` | `users` | 用户管理 | 需登录 |
+| `/admins` | `admins` | 管理员管理 | 仅 admin 角色 |
 
 ## 编码规范
 
@@ -124,6 +136,8 @@ tarot-admin/
 
 | 前端函数 | 后端端点 | 说明 |
 |----------|---------|------|
+| `login(username, password)` | `POST /admin/auth/login` | 管理员登录（返回 JWT + admin 信息） |
+| `changePassword(old, new)` | `POST /admin/auth/change-password` | 修改管理员密码 |
 | `fetchServiceInfo()` | `GET /` | 服务信息 |
 | `fetchHealth()` | `GET /health` | 健康检查 |
 | `fetchLogs(params)` | `GET /logs` | 日志分页查询 |
@@ -141,6 +155,7 @@ proxy: {
   '/metrics': 'http://localhost:3000',
   '/logs': 'http://localhost:3000',
   '/cards': 'http://localhost:3000',
+  '/admin': 'http://localhost:3000',
 }
 ```
 
@@ -197,6 +212,25 @@ pnpm deploy:cf        # 构建 + 部署到 Cloudflare Workers
 ```typescript
 // Composable
 const { theme, toggle } = useTheme()
+```
+
+## 认证系统
+
+使用 JWT 认证，通过 `useAuth()` composable 管理：
+
+- **登录**：`POST /admin/auth/login` 获取 JWT token，存入 localStorage
+- **登出**：清除 localStorage 中的 token 和 admin 信息
+- **密码修改**：`POST /admin/auth/change-password`，成功后自动登出要求重新登录
+- **首次登录强制改密**：`mustChangePassword` 标记为 true 时路由守卫自动跳转 `/change-password`
+- **角色权限**：路由 meta `requireRole: 'admin'` 限制仅超级管理员可访问
+
+### useAuth 使用
+
+```typescript
+const { admin, isLoggedIn, token, login, logout, changePassword, getAuthHeaders } = useAuth()
+
+// 在 <script setup> 中访问 ref 值必须使用 .value
+if (admin.value?.role === 'admin') { /* 管理员专属逻辑 */ }
 ```
 
 ## 已知限制

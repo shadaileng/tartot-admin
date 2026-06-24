@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.1] - 2026-06-24
+
+### Fixed
+
+- Sidebar 角色过滤逻辑修复：`admin?.role` → `admin.value?.role`，修复 Vue ref 未 `.value` 导致管理员管理菜单永远不显示的 bug
+
 ## [2.2.0] - 2026-06-24
 
 ### Added

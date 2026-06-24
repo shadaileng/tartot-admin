@@ -18,7 +18,7 @@ const navItems = [
 ]
 
 const visibleNavItems = computed(() =>
-  navItems.filter(item => !item.requireRole || admin?.role === item.requireRole)
+  navItems.filter(item => !item.requireRole || admin.value?.role === item.requireRole)
 )
 </script>
 
