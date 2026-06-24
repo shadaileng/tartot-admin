@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.2.0] - 2026-06-24
+
+### Added
+
+- 改密页面 `/change-password`：空白布局，旧密码/新密码/确认密码表单，首次登录强制跳转
+- TopBar 用户菜单：头像缩写 + 显示名 + 角色，下拉「修改密码」「退出登录」
+- 路由守卫增强：未改密强制跳转 `/change-password`，已改密访问改密页自动跳首页
+- `useAuth` 新增 `changePassword` 方法，登录响应存储 `mustChangePassword` 标记
+
+### Removed
+
+- 完全移除 `VITE_API_KEY` 环境变量和 API Key fallback 认证，全部使用 Admin JWT
+
 ## [2.1.0] - 2026-06-24
 
 ### Added

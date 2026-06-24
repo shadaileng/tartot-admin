@@ -89,6 +89,7 @@ export interface AdminInfo {
   username: string
   displayName: string
   role: string
+  mustChangePassword: boolean
 }
 
 export interface AuthResponse {

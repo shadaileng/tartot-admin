@@ -11,6 +11,12 @@ const router = createRouter({
       meta: { title: '登录', layout: 'blank' },
     },
     {
+      path: '/change-password',
+      name: 'change-password',
+      component: () => import('@/views/ChangePasswordView.vue'),
+      meta: { title: '修改密码', layout: 'blank' },
+    },
+    {
       path: '/',
       name: 'dashboard',
       component: () => import('@/views/DashboardView.vue'),
@@ -54,16 +60,27 @@ router.beforeEach((to) => {
 })
 
 router.beforeEach((to, from, next) => {
-  const { isLoggedIn } = useAuth()
+  const { isLoggedIn, admin } = useAuth()
 
-  // 访问登录页：已登录则重定向到首页
+  // 访问登录页：已登录则跳转
   if (to.path === '/login') {
-    if (isLoggedIn.value) return next('/')
-    return next()
+    if (!isLoggedIn.value) return next()
+    if (admin.value?.mustChangePassword) return next('/change-password')
+    return next('/')
   }
 
-  // 访问普通页面：未登录则重定向到登录页
+  // 未登录：所有页面跳转登录页
   if (!isLoggedIn.value) return next('/login')
+
+  // 登录但未改密：除改密页外全部强制跳转改密页
+  if (admin.value?.mustChangePassword && to.path !== '/change-password') {
+    return next('/change-password')
+  }
+
+  // 已改密访问改密页：重定向到首页
+  if (to.path === '/change-password' && !admin.value?.mustChangePassword) {
+    return next('/')
+  }
 
   next()
 })

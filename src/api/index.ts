@@ -3,25 +3,8 @@ import { useAuth } from '@/composables/useAuth'
 
 const BASE = import.meta.env.VITE_API_BASE_URL
 
-function getApiKey(): string | null {
-  return import.meta.env.VITE_API_KEY || null
-}
-
 function getAuthHeaders(): Record<string, string> {
-  const { getAuthHeaders: getAdminHeaders, token } = useAuth()
-
-  // 优先使用 Admin JWT
-  if (token.value) {
-    return getAdminHeaders()
-  }
-
-  // 回退到 API Key
-  const apiKey = getApiKey()
-  if (apiKey) {
-    return { Authorization: `Bearer ${apiKey}` }
-  }
-
-  return {}
+  return useAuth().getAuthHeaders()
 }
 
 async function request<T>(path: string): Promise<T> {

@@ -4,11 +4,15 @@ import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
-const { login, isLoggedIn } = useAuth()
+const { login, isLoggedIn, admin } = useAuth()
 
 // 已登录则直接跳转
 if (isLoggedIn.value) {
-  router.replace('/')
+  if (admin.value?.mustChangePassword) {
+    router.replace('/change-password')
+  } else {
+    router.replace('/')
+  }
 }
 
 const form = reactive({ username: '', password: '' })
@@ -26,8 +30,12 @@ async function handleLogin() {
   errorMsg.value = ''
 
   try {
-    await login(form.username, form.password)
-    router.replace('/')
+    const adminInfo = await login(form.username, form.password)
+    if (adminInfo.mustChangePassword) {
+      router.replace('/change-password')
+    } else {
+      router.replace('/')
+    }
   } catch (err: any) {
     errorMsg.value = err.message || '登录失败，请重试'
   } finally {
