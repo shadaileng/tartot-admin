@@ -52,7 +52,7 @@ export function useAuth() {
     localStorage.setItem(TOKEN_KEY, body.token)
     localStorage.setItem(ADMIN_KEY, JSON.stringify(admin.value))
 
-    return admin.value
+    return admin.value!
   }
 
   function logout(): void {

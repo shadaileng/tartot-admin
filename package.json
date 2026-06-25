@@ -1,6 +1,6 @@
 {
   "name": "tarot-admin",
-  "version": "2.3.2",
+  "version": "2.3.3",
   "description": "塔罗牌后台管理面板 — 查看和管理 tarot-backend 服务",
   "private": true,
   "packageManager": "pnpm@9.15.0",

@@ -5,6 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.3.3] - 2026-06-25
+
+### Fixed
+
+- 修复 `useAuth.login()` 返回值类型错误：`admin.value`（`AdminInfo | null`）赋值给 `AdminInfo` 导致 TS2322 编译报错，添加非空断言
+
 ## [2.3.2] - 2026-06-24
 
 ### Fixed
