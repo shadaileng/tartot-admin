@@ -3,6 +3,9 @@ import { useAuth } from '@/composables/useAuth'
 
 const BASE = import.meta.env.VITE_API_BASE_URL
 
+let isRefreshing = false
+let refreshPromise: Promise<string> | null = null
+
 function getAuthHeaders(): Record<string, string> {
   return useAuth().getAuthHeaders()
 }
@@ -10,9 +13,54 @@ function getAuthHeaders(): Record<string, string> {
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
   const headers = { ...getAuthHeaders(), ...(options?.headers || {}) }
   const res = await fetch(`${BASE}${path}`, { ...options, headers })
+
+  if (res.status === 401) {
+    const body = await res.json().catch(() => ({}))
+
+    if (body.error === 'TOKEN_EXPIRED') {
+      if (isRefreshing && refreshPromise) {
+        try {
+          const newToken = await refreshPromise
+          headers['Authorization'] = `Bearer ${newToken}`
+          const retryRes = await fetch(`${BASE}${path}`, { ...options, headers })
+          if (retryRes.ok) return retryRes.json() as Promise<T>
+        } catch {
+          useAuth().logout()
+          window.location.href = '/login'
+          throw new Error('登录已过期，请重新登录')
+        }
+      }
+
+      isRefreshing = true
+      refreshPromise = useAuth().refreshAccessToken()
+
+      try {
+        const newToken = await refreshPromise
+        headers['Authorization'] = `Bearer ${newToken}`
+        const retryRes = await fetch(`${BASE}${path}`, { ...options, headers })
+        if (!retryRes.ok) throw new Error('请求失败')
+        return retryRes.json() as Promise<T>
+      } catch {
+        useAuth().logout()
+        window.location.href = '/login'
+        throw new Error('登录已过期，请重新登录')
+      } finally {
+        isRefreshing = false
+        refreshPromise = null
+      }
+    }
+
+    if (body.error === 'REFRESH_EXPIRED') {
+      useAuth().logout()
+      window.location.href = '/login'
+    }
+
+    throw new Error(body.message || `HTTP ${res.status}`)
+  }
+
   if (!res.ok) {
     const body = await res.json().catch(() => ({}))
-    throw new Error(body.message || body.error || `HTTP ${res.status}: ${res.statusText}`)
+    throw new Error(body.message || `HTTP ${res.status}: ${res.statusText}`)
   }
   return res.json() as Promise<T>
 }

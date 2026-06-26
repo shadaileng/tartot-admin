@@ -96,7 +96,7 @@ VALUES (?, ?, ?, '超级管理员', 'admin', datetime('now'), 1);
 - 查 `admins` 表按 `username` 查找 + 校验 `is_active = 1`
 - 用 `bcrypt.compare` 验证密码
 - JWT payload：`{ sub: admin.id, username, role, type: 'admin' }`
-- JWT 有效期 24 小时（可配置 `ADMIN_JWT_EXPIRES_IN`）
+- JWT 双 Token：Access Token（默认 2h，可配置 `ADMIN_ACCESS_EXPIRES_IN`）+ Refresh Token（默认 30d，可配置 `ADMIN_REFRESH_EXPIRES_IN`）
 - 登录成功更新 `last_login_at`
 - 登录失败限流：同一 IP 5 次/分钟
 
