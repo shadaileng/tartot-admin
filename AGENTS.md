@@ -143,6 +143,17 @@ tarot-admin/
 | `fetchLogs(params)` | `GET /logs` | 日志分页查询 |
 | `fetchLogById(id)` | `GET /logs/:id` | 日志详情 |
 | `fetchMetricsRaw()` | `GET /metrics` | Prometheus 指标文本 |
+| `fetchUsers(params)` | `GET /api/admin/users` | 用户管理列表（分页/搜索/deleted 筛选） |
+| `unbindEmail(userId)` | `PUT /api/admin/users/:id/unbind-email` | 解除邮箱绑定 |
+| `deleteUser(userId)` | `DELETE /api/admin/users/:id` | 软删除用户 |
+| `restoreUser(userId)` | `PUT /api/admin/users/:id/restore` | 恢复已删除用户 |
+| `fetchAdmins(params)` | `GET /api/admin/admins` | 管理员列表 |
+| `createAdmin(data)` | `POST /api/admin/admins` | 创建管理员 |
+| `updateAdmin(id, data)` | `PUT /api/admin/admins/:id` | 更新管理员 |
+| `deleteAdmin(id)` | `DELETE /api/admin/admins/:id` | 删除管理员 |
+| `resetAdminPassword(id)` | `POST /api/admin/admins/:id/reset-password` | 重置管理员密码 |
+| `fetchConfig()` | `GET /api/config` | 获取运行时配置 |
+| `updateConfigItem(key, value)` | `PUT /api/config/:key` | 更新配置项（仅 admin 角色） |
 
 ### Vite Proxy（开发环境）
 
@@ -232,6 +243,58 @@ const { admin, isLoggedIn, token, login, logout, changePassword, getAuthHeaders 
 // 在 <script setup> 中访问 ref 值必须使用 .value
 if (admin.value?.role === 'admin') { /* 管理员专属逻辑 */ }
 ```
+
+## 用户管理
+
+### 页面功能（`UsersView.vue`）
+
+| 模块 | 说明 |
+|------|------|
+| 标签页切换 | 正常用户 / 已删除用户，切换时 page 归 1 |
+| 搜索 | 按昵称或邮箱防抖搜索（300ms） |
+| 分页 | 每页 20 条，页码导航 |
+| 用户表格 | 头像、昵称、邮箱（脱敏）、登录方式（微信/邮箱/微信+邮箱）、注册/删除时间、最后请求时间、请求次数 |
+| 操作列（正常） | 「解除邮箱」（仅同时绑定邮箱+微信的用户显示）、「删除」（确认弹窗） |
+| 操作列（已删除） | 「恢复」 |
+| 详情弹窗 | 用户 ID、昵称、邮箱、手机、注册时间、最后登录、请求次数、最后请求 |
+| 排序 | 正常用户按 `COALESCE(last_request_at, last_login_at, created_at) DESC`，已删除用户按 `deleted_at DESC` |
+
+### 用户管理 API
+
+所有接口受 `adminAuthMiddleware` 保护，返回 JSON `{ message: string }`。
+
+| 操作 | 方法 | 端点 | 说明 |
+|------|------|------|------|
+| 用户列表 | GET | `/api/admin/users` | 参数：`page`, `limit`(默认20), `keyword`, `deleted`(boolean) |
+| 解除邮箱 | PUT | `/api/admin/users/:id/unbind-email` | 清空邮箱/密码，自动恢复被合并的原邮箱用户；纯邮箱用户返回 `400 CANNOT_UNBIND` |
+| 软删除 | DELETE | `/api/admin/users/:id` | 设置 `deleted_at=now`；绑定邮箱的微信用户先自动解除绑定再删除 |
+| 恢复 | PUT | `/api/admin/users/:id/restore` | 设置 `deleted_at=NULL` |
+
+### 软删除恢复流程
+
+```
+Admin 删除微信用户 A：
+  如果 A 有 email+openid → 先解绑（清空 email/password_hash，恢复被合并的源邮箱用户）
+  → 再设置 A.deleted_at = now
+
+Admin 恢复用户：
+  设置 deleted_at = NULL → 用户恢复正常登录
+
+被删除用户：
+  JWT 中间件拦截所有请求（401 ACCOUNT_DELETED）
+  微信/邮箱登录入口拒绝发放新 token（403 ACCOUNT_DELETED）
+```
+
+### 管理员认证系统
+
+| 特性 | 说明 |
+|------|------|
+| 登录 | `POST /admin/auth/login` → 获取 accessToken + refreshToken |
+| 双 Token | access 2h 过期 → refresh 30d 过期 → `POST /admin/auth/refresh` 自动续期 |
+| 登出 | 清除 localStorage 中所有 token 和 admin 信息 |
+| 修改密码 | `POST /admin/auth/change-password`，成功后自动登出 |
+| 首次登录强制改密 | `mustChangePassword=true` 时路由守卫自动跳转 `/change-password` |
+| 角色权限 | `admin`（完全访问）vs `readonly`（仅查看，隐藏编辑按钮 + 后端 403 双重限制） |
 
 ## 已知限制
 

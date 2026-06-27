@@ -1,6 +1,6 @@
 # Admin 用户管理 — 维护功能 + 软删除方案
 
-> 版本：v1.0 | 最后更新：2026-06-27 | 状态：待实施
+> 版本：v1.2 | 最后更新：2026-06-27 | 状态：✅ 已实施
 
 ## 背景
 
@@ -188,3 +188,46 @@ Admin 解除 A 的邮箱绑定：
 | 6 | `tarot-admin/src/api/index.ts` | 3 新 API + fetchUsers 扩展 | 4 |
 | 7 | `tarot-admin/src/views/UsersView.vue` | Tab/操作列/弹窗/Toast | 5,6 |
 | 8 | `pnpm build` × 2 | 构建检查 | 全部完成 |
+
+---
+
+## §10 后续补充的安全与 bug 修复
+
+除原计划功能外，实施过程中发现并修复了以下问题：
+
+### 10.1 已注销用户登录状态拦截
+
+**问题**：软删除后用户 JWT 仍有效，可继续访问 API，自动重新登录仍可获取新 token。
+**修复**（3 文件）：
+
+| 文件 | 改动 |
+|------|------|
+| `src/middleware/jwt-auth.ts` | 改为 async，JWT 验证后调用 `findById` 检查 `deleted_at`，已注销返回 `401 ACCOUNT_DELETED` |
+| `src/auth/wechat-login.ts` | 微信登录查找用户后检查 `deleted_at`，返回 `403 ACCOUNT_DELETED` |
+| `src/auth/email-login.ts` | 邮箱登录验证密码后检查 `deleted_at`，返回 `403 ACCOUNT_DELETED` |
+
+### 10.2 纯邮箱用户保护
+
+**问题**：纯邮箱用户（无 openid）在管理端可点击解除邮箱按钮，导致账号无法登录。
+**修复**（3 文件）：
+
+| 文件 | 改动 |
+|------|------|
+| `src/db/user.ts` `unbindEmail()` | 增加 `if (!user.openid) throw Error('纯邮箱用户无法解除邮箱绑定')` |
+| `src/index.ts` 路由 | catch 捕获该错误，返回 `400 CANNOT_UNBIND` |
+| `src/views/UsersView.vue` | 解除邮箱按钮增加 `v-if="user.email && user.openid"` |
+
+### 10.3 删除微信用户前先解除邮箱
+
+**问题**：直接软删除绑定邮箱的微信用户会导致邮箱被占用，无法释放。
+**修复**：`softDeleteUser()` 中先检查 `email + openid` → 调用 `unbindEmail()` → 再设 `deleted_at`。
+
+### 10.4 小程序邮箱解绑不显示
+
+**问题**：管理端解绑邮箱后，小程序端仍显示旧邮箱（本地缓存未更新）。
+**修复**：小程序 `profile-detail.vue` 的 `onShow` 从 `getUserInfo()`（本地缓存）改为 `await refreshUserInfo()`（服务端拉取）。
+
+### 10.5 性别修改不同步
+
+**问题**：`syncGender()` 定义但从未调用，`genderIndex` 永远为 0（显示「保密」）。
+**修复**（2 处）：`onShow` 末尾添加 `syncGender()`；`handleGenderChange` 中 `genderIndex` 移到 API 成功后用 `result.user.gender` 赋值。|
