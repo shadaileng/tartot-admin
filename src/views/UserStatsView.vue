@@ -2,7 +2,7 @@
 import { ref, watch, computed, onMounted } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import type { UserStatsEntry } from '@/types'
-import { fetchUserStatsList, updateUserPoints } from '@/api'
+import { fetchUserStatsList, updateUserPoints, resetUserQuota, clearUserInvite } from '@/api'
 
 const { admin } = useAuth()
 const data = ref<UserStatsEntry[]>([])
@@ -71,6 +71,24 @@ async function doAdjust() {
   }
 }
 
+async function doResetQuota(userId: string) {
+  try {
+    await resetUserQuota(userId)
+    await doLoad()
+  } catch (err: any) {
+    errorMsg.value = err.message || '重置额度失败'
+  }
+}
+
+async function doClearInvite(userId: string) {
+  try {
+    await clearUserInvite(userId)
+    await doLoad()
+  } catch (err: any) {
+    errorMsg.value = err.message || '清除邀请绑定失败'
+  }
+}
+
 function formatDate(dateStr: string | null): string {
   if (!dateStr) return '-'
   return new Date(dateStr).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' })
@@ -131,10 +149,20 @@ function formatDate(dateStr: string | null): string {
               <td class="px-4 py-3 text-xs font-mono text-gray-500 dark:text-gray-400">{{ row.referral_code }}</td>
               <td class="px-4 py-3 text-xs text-gray-500 dark:text-gray-400">{{ formatDate(row.created_at) }}</td>
               <td class="px-4 py-3 text-center">
-                <button v-if="admin?.role === 'admin'" @click="openAdjust(row)"
-                  class="px-3 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-lg transition-colors">
-                  调整积分
-                </button>
+                <div class="flex items-center justify-center gap-1">
+                  <button v-if="admin?.role === 'admin'" @click="openAdjust(row)"
+                    class="px-2 py-1 text-xs font-medium text-indigo-600 dark:text-indigo-400 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded transition-colors">
+                    积分
+                  </button>
+                  <button v-if="admin?.role === 'admin'" @click="doResetQuota(row.user_id)"
+                    class="px-2 py-1 text-xs font-medium text-emerald-600 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-900/30 rounded transition-colors">
+                    重置额度
+                  </button>
+                  <button v-if="admin?.role === 'admin'" @click="doClearInvite(row.user_id)"
+                    class="px-2 py-1 text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/30 rounded transition-colors">
+                    清除邀请
+                  </button>
+                </div>
               </td>
             </tr>
           </tbody>

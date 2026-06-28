@@ -244,3 +244,70 @@ export interface UserStatsEntry {
   referral_code: string
   created_at: string
 }
+
+// ========== 数据维护 ==========
+
+export interface TrendPoint {
+  date: string
+  count: number
+}
+
+export interface LevelDistribution {
+  level: number
+  count: number
+  title: string
+}
+
+export interface TrendResponse {
+  registration: TrendPoint[]
+  checkin: TrendPoint[]
+  reading: TrendPoint[]
+  invite: TrendPoint[]
+  levelDistribution: LevelDistribution[]
+  summary: {
+    totalUsers: number
+    todayCheckins: number
+    totalReadings: number
+    totalInvites: number
+  }
+}
+
+export interface AdminInviteRecord {
+  id: string
+  inviter_id: string
+  invitee_id: string
+  status: string
+  completed_at: string | null
+  created_at: string
+  inviter_name: string | null
+  inviter_avatar: string | null
+  invitee_name: string | null
+  invitee_avatar: string | null
+}
+
+export interface AdminInviteListResponse {
+  total: number
+  page: number
+  limit: number
+  data: AdminInviteRecord[]
+}
+
+export interface CheckinStatsResponse {
+  todayCheckins: number
+  total: number
+  avgPoints: number
+  page?: number
+  limit?: number
+  data?: CheckinRecordEntry[]
+}
+
+export interface CheckinRecordEntry {
+  id: string
+  user_id: string
+  checkin_date: string
+  points_earned: number
+  streak_bonus: number
+  created_at: string
+  nickname: string | null
+  avatar_url: string | null
+}

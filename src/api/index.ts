@@ -1,4 +1,4 @@
-import type { ServiceInfo, HealthResponse, LogListResponse, LogEntry, MetricsSnapshot, ConfigResponse, UserListResponse, AdminListResponse, AdminEntry, CreateAdminRequest, UpdateAdminRequest, ResetPasswordRequest, ApiResponse, LevelDefinitionEntry, TaskDefinitionEntry, CreateTaskDefinitionRequest, UpdateTaskDefinitionRequest, UserStatsEntry } from '@/types'
+import type { ServiceInfo, HealthResponse, LogListResponse, LogEntry, MetricsSnapshot, ConfigResponse, UserListResponse, AdminListResponse, AdminEntry, CreateAdminRequest, UpdateAdminRequest, ResetPasswordRequest, ApiResponse, LevelDefinitionEntry, TaskDefinitionEntry, CreateTaskDefinitionRequest, UpdateTaskDefinitionRequest, UserStatsEntry, TrendResponse, AdminInviteListResponse, CheckinStatsResponse } from '@/types'
 import { useAuth } from '@/composables/useAuth'
 
 const BASE = import.meta.env.VITE_API_BASE_URL
@@ -247,4 +247,60 @@ export function fetchUserStatsList(params: {
 
 export function updateUserPoints(userId: string, delta: number): Promise<void> {
   return putRequest<void>(`/api/admin/users/${userId}/points`, { delta })
+}
+
+// ========== 趋势统计 API ==========
+
+export function fetchTrends(days: number = 30): Promise<TrendResponse> {
+  return getRequest<TrendResponse>(`/api/admin/stats/trends?days=${days}`)
+}
+
+// ========== 邀请记录管理 API ==========
+
+export function fetchAdminInviteRecords(params: {
+  page?: number
+  limit?: number
+  status?: string
+  keyword?: string
+} = {}): Promise<AdminInviteListResponse> {
+  const query = new URLSearchParams()
+  if (params.page) query.set('page', String(params.page))
+  if (params.limit) query.set('limit', String(params.limit))
+  if (params.status) query.set('status', params.status)
+  if (params.keyword) query.set('keyword', params.keyword)
+  const qs = query.toString()
+  return getRequest<AdminInviteListResponse>(`/api/admin/invite-records${qs ? `?${qs}` : ''}`)
+}
+
+export function completeInviteRecord(id: string): Promise<void> {
+  return putRequest<void>(`/api/admin/invite-records/${id}/complete`, {})
+}
+
+export function deleteInviteRecord(id: string): Promise<void> {
+  return deleteRequest<void>(`/api/admin/invite-records/${id}`)
+}
+
+// ========== 签到统计 API ==========
+
+export function fetchCheckinStats(params: {
+  detail?: boolean
+  page?: number
+  limit?: number
+} = {}): Promise<CheckinStatsResponse> {
+  const query = new URLSearchParams()
+  if (params.detail) query.set('detail', '1')
+  if (params.page) query.set('page', String(params.page))
+  if (params.limit) query.set('limit', String(params.limit))
+  const qs = query.toString()
+  return getRequest<CheckinStatsResponse>(`/api/admin/checkin-stats${qs ? `?${qs}` : ''}`)
+}
+
+// ========== 用户数据维护 API ==========
+
+export function resetUserQuota(userId: string): Promise<void> {
+  return putRequest<void>(`/api/admin/users/${userId}/reset-quota`, {})
+}
+
+export function clearUserInvite(userId: string): Promise<void> {
+  return putRequest<void>(`/api/admin/users/${userId}/clear-invite`, {})
 }

@@ -76,6 +76,24 @@ const router = createRouter({
       component: () => import('@/views/UserStatsView.vue'),
       meta: { title: '用户统计' },
     },
+    {
+      path: '/stats-trends',
+      name: 'stats-trends',
+      component: () => import('@/views/StatsTrendView.vue'),
+      meta: { title: '趋势统计' },
+    },
+    {
+      path: '/invite-records',
+      name: 'invite-records',
+      component: () => import('@/views/InviteRecordsView.vue'),
+      meta: { title: '邀请记录' },
+    },
+    {
+      path: '/checkin-stats',
+      name: 'checkin-stats',
+      component: () => import('@/views/CheckinStatsView.vue'),
+      meta: { title: '签到统计' },
+    },
   ],
 })
 
