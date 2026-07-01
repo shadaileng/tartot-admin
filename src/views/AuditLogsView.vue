@@ -96,8 +96,14 @@ function triggerSearch() {
   debounceTimer = setTimeout(() => { page.value = 1; doLoad() }, 300)
 }
 
-watch([actionFilter, actorTypeFilter, startDate, endDate], () => { page.value = 1; doLoad() })
-watch(page, doLoad)
+watch([actionFilter, actorTypeFilter, startDate, endDate], () => {
+  if (page.value !== 1) {
+    page.value = 1
+  } else {
+    doLoad()
+  }
+})
+watch(page, doLoad, { immediate: true })
 
 function formatDate(d: string | null) {
   if (!d) return '-'
