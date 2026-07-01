@@ -1,33 +1,51 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, onMounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useAuth } from '@/composables/useAuth'
+import { fetchMyMenus } from '@/api'
+import type { MenuTreeItem } from '@/types'
 import ThemeToggle from './ThemeToggle.vue'
 
 const route = useRoute()
-const { admin } = useAuth()
 
-const navItems = [
-  { name: 'dashboard', label: '仪表盘', icon: 'M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6' },
-  { name: 'logs', label: '日志', icon: 'M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z' },
-  { name: 'health', label: '健康监控', icon: 'M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z' },
-  { name: 'metrics', label: '指标', icon: 'M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z' },
-  { name: 'config', label: '配置', icon: 'M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z M15 12a3 3 0 11-6 0 3 3 0 016 0z' },
-  { name: 'stats-trends', label: '趋势统计', icon: 'M18 20V10M12 20V4M6 20v-6' },
-  { name: 'users', label: '用户管理', icon: 'M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z' },
-  { name: 'admins', label: '管理员管理', icon: 'M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z', requireRole: 'admin' },
-  { name: 'levels', label: '等级管理', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
-  { name: 'task-definitions', label: '任务管理', icon: 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4' },
-  { name: 'user-stats', label: '用户统计', icon: 'M16 8v8m-4-5v5m-4-2v2m-2 4h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z' },
-  { name: 'invite-records', label: '邀请记录', icon: 'M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1' },
-  { name: 'checkin-stats', label: '签到统计', icon: 'M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z' },
-  { name: 'feedback', label: '意见反馈', icon: 'M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z' },
-  { name: 'audit-logs', label: '操作日志', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
-]
+const menuTree = ref<MenuTreeItem[]>([])
+const loading = ref(true)
+const error = ref<string | null>(null)
+const expandedGroups = ref(new Set<string>())
 
-const visibleNavItems = computed(() =>
-  navItems.filter(item => !item.requireRole || admin.value?.role === item.requireRole)
-)
+function toggleGroup(groupId: string) {
+  if (expandedGroups.value.has(groupId)) {
+    expandedGroups.value.delete(groupId)
+  } else {
+    expandedGroups.value.add(groupId)
+  }
+}
+
+function autoExpandActiveGroup() {
+  for (const group of menuTree.value) {
+    const hasActive = group.children.some(item => item.routeName === route.name)
+    if (hasActive) {
+      expandedGroups.value.add(group.id)
+    }
+  }
+}
+
+onMounted(async () => {
+  try {
+    const { menus } = await fetchMyMenus()
+    menuTree.value = menus
+    if (menus.length > 0) {
+      expandedGroups.value.add(menus[0].id)
+    }
+    autoExpandActiveGroup()
+  } catch (err: any) {
+    console.error('加载菜单失败:', err)
+    error.value = err.message || '加载菜单失败'
+  } finally {
+    loading.value = false
+  }
+})
+
+watch(() => route.name, autoExpandActiveGroup)
 </script>
 
 <template>
@@ -38,23 +56,55 @@ const visibleNavItems = computed(() =>
       </h1>
     </div>
 
-    <nav class="flex-1 py-4 space-y-1 px-3">
-      <router-link
-        v-for="item in visibleNavItems"
-        :key="item.name"
-        :to="{ name: item.name }"
-        class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors"
-        :class="
-          route.name === item.name
-            ? 'bg-indigo-600 text-white'
-            : 'hover:bg-gray-800 hover:text-white'
-        "
-      >
-        <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
-          <path stroke-linecap="round" stroke-linejoin="round" :d="item.icon" />
-        </svg>
-        {{ item.label }}
-      </router-link>
+    <nav class="flex-1 py-4 px-3 overflow-y-auto">
+      <div v-if="loading" class="space-y-2">
+        <div v-for="i in 3" :key="i" class="h-10 bg-gray-800 rounded-lg animate-pulse" />
+      </div>
+
+      <div v-else-if="error" class="px-3 py-4 text-sm text-red-400">
+        {{ error }}
+      </div>
+
+      <div v-else class="space-y-1">
+        <div v-for="group in menuTree" :key="group.id">
+          <button
+            v-if="group.children.length > 0"
+            @click="toggleGroup(group.id)"
+            class="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors hover:bg-gray-800 hover:text-white"
+          >
+            <svg class="w-5 h-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+              <path stroke-linecap="round" stroke-linejoin="round" :d="group.icon || undefined" />
+            </svg>
+            <span class="flex-1 text-left">{{ group.label }}</span>
+            <svg
+              class="w-4 h-4 transition-transform"
+              :class="{ 'rotate-90': expandedGroups.has(group.id) }"
+              fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"
+            >
+              <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+
+          <div v-show="expandedGroups.has(group.id)" class="ml-4 mt-1 space-y-1">
+            <router-link
+              v-for="item in group.children"
+              :key="item.id"
+              :to="item.routeName ? { name: item.routeName } : '#'"
+              class="flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors"
+              :class="
+                route.name === item.routeName
+                  ? 'bg-indigo-600 text-white'
+                  : 'hover:bg-gray-800 hover:text-white'
+              "
+            >
+              <svg class="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                <path stroke-linecap="round" stroke-linejoin="round" :d="item.icon || undefined" />
+              </svg>
+              {{ item.label }}
+            </router-link>
+          </div>
+        </div>
+      </div>
     </nav>
 
     <div class="px-3 py-4 border-t border-gray-700/50">

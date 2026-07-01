@@ -367,3 +367,47 @@ export interface AuditLogListResponse {
   limit: number
   data: AuditLogEntry[]
 }
+
+// ========== 菜单系统 ==========
+
+export interface MenuItem {
+  id: string
+  parentId: string | null
+  routeName: string
+  label: string
+  icon: string | null
+  sortOrder: number
+  isVisible: boolean
+  requireRole: string | null
+  createdAt: string
+  updatedAt: string
+}
+
+export interface MenuTreeItem {
+  id: string
+  routeName: string | null
+  label: string
+  icon: string | null
+  sortOrder: number
+  children: MenuTreeItem[]
+}
+
+export interface CreateMenuRequest {
+  parentId?: string | null
+  routeName: string
+  label: string
+  icon?: string | null
+  sortOrder?: number
+  isVisible?: boolean
+  requireRole?: string | null
+}
+
+export interface UpdateMenuRequest {
+  parentId?: string | null
+  routeName?: string
+  label?: string
+  icon?: string | null
+  sortOrder?: number
+  isVisible?: boolean
+  requireRole?: string | null
+}

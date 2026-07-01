@@ -364,3 +364,33 @@ export function fetchAuditLogs(params: {
 export function cleanAuditLogs(retentionDays?: number): Promise<{ message: string; deleted: number; retentionDays: number }> {
   return postRequest<{ message: string; deleted: number; retentionDays: number }>('/api/admin/audit-logs/clean', { retentionDays })
 }
+
+// ========== 菜单 API ==========
+
+export function fetchMyMenus(): Promise<{ menus: import('@/types').MenuTreeItem[] }> {
+  return getRequest<{ menus: import('@/types').MenuTreeItem[] }>('/api/admin/menus/my')
+}
+
+export function fetchAllMenus(): Promise<{ menus: import('@/types').MenuItem[] }> {
+  return getRequest<{ menus: import('@/types').MenuItem[] }>('/api/admin/menus')
+}
+
+export function createMenu(data: import('@/types').CreateMenuRequest): Promise<{ id: string }> {
+  return postRequest<{ id: string }>('/api/admin/menus', data)
+}
+
+export function updateMenu(id: string, data: import('@/types').UpdateMenuRequest): Promise<void> {
+  return putRequest<void>(`/api/admin/menus/${id}`, data)
+}
+
+export function deleteMenu(id: string): Promise<void> {
+  return deleteRequest<void>(`/api/admin/menus/${id}`)
+}
+
+export function fetchRoleMenus(role: string): Promise<{ menuIds: string[] }> {
+  return getRequest<{ menuIds: string[] }>(`/api/admin/menus/role/${role}`)
+}
+
+export function updateRoleMenus(role: string, menuIds: string[]): Promise<void> {
+  return putRequest<void>(`/api/admin/menus/role/${role}`, { menuIds })
+}
