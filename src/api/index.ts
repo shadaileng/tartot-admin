@@ -58,6 +58,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
       window.location.href = '/login'
     }
 
+    // 兜底：其他 401（如 UNAUTHORIZED "无效的 token"）也跳转登录
+    useAuth().logout()
+    window.location.href = '/login'
+
     throw new Error(body.message || `HTTP ${res.status}`)
   }
 
