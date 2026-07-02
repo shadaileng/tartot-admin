@@ -1,5 +1,6 @@
 import type { ServiceInfo, HealthResponse, LogListResponse, LogEntry, ReadingLogListResponse, ReadingLogEntry, MetricsSnapshot, ConfigResponse, UserListResponse, AdminListResponse, AdminEntry, CreateAdminRequest, UpdateAdminRequest, ResetPasswordRequest, ApiResponse, LevelDefinitionEntry, TaskDefinitionEntry, CreateTaskDefinitionRequest, UpdateTaskDefinitionRequest, UserStatsEntry, TrendResponse, AdminInviteListResponse, CheckinStatsResponse, FeedbackListResponse, FeedbackDetail, AuditLogListResponse, PageSectionsResponse } from '@/types'
 import { useAuth } from '@/composables/useAuth'
+import router from '@/router'
 
 const BASE = import.meta.env.VITE_API_BASE_URL
 
@@ -9,6 +10,13 @@ let isRedirectingToLogin = false
 
 function getAuthHeaders(): Record<string, string> {
   return useAuth().getAuthHeaders()
+}
+
+function redirectToLogin() {
+  if (isRedirectingToLogin) return
+  isRedirectingToLogin = true
+  useAuth().logout()
+  router.replace('/login')
 }
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -28,15 +36,10 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
           h.set('Authorization', `Bearer ${newToken}`)
           const retryRes = await fetch(`${BASE}${path}`, { ...options, headers: h })
           if (retryRes.ok) return retryRes.json() as Promise<T>
-          throw new Error('请求失败')
         } catch {
-          if (!isRedirectingToLogin) {
-            isRedirectingToLogin = true
-            useAuth().logout()
-            window.location.href = '/login'
-          }
-          throw new Error('登录已过期，请重新登录')
+          redirectToLogin()
         }
+        throw new Error('登录已过期，请重新登录')
       }
 
       isRefreshing = true
@@ -49,11 +52,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
         if (!retryRes.ok) throw new Error('请求失败')
         return retryRes.json() as Promise<T>
       } catch {
-        if (!isRedirectingToLogin) {
-          isRedirectingToLogin = true
-          useAuth().logout()
-          window.location.href = '/login'
-        }
+        redirectToLogin()
         throw new Error('登录已过期，请重新登录')
       } finally {
         isRefreshing = false
@@ -62,11 +61,7 @@ async function request<T>(path: string, options?: RequestInit): Promise<T> {
     }
 
     // 其他 401（如 UNAUTHORIZED "无效的 token"、REFRESH_EXPIRED）也跳转登录
-    if (!isRedirectingToLogin) {
-      isRedirectingToLogin = true
-      useAuth().logout()
-      window.location.href = '/login'
-    }
+    redirectToLogin()
     throw new Error(body.message || `HTTP ${res.status}`)
   }
 

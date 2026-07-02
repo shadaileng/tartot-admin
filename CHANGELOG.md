@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.9.3] - 2026-07-02
+
+### Fixed
+
+- 移除 401 处理中的 `window.location.href` 浏览器整页跳转，改用 `router.replace('/login')` SPA 内部跳转，彻底避免页面无限刷新循环
+- `loadStoredTokens()` 同时校验 refresh token 过期，防止已过期 token 导致 /refresh 死循环
+
 ## [2.9.2] - 2026-07-02
 
 ### Fixed

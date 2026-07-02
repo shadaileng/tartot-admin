@@ -24,7 +24,7 @@ function isTokenExpired(token: string): boolean {
 function loadStoredTokens(): { access: string | null; refresh: string | null } {
   let access = localStorage.getItem(ACCESS_TOKEN_KEY)
   let refresh = localStorage.getItem(REFRESH_TOKEN_KEY)
-  if (access && isTokenExpired(access)) {
+  if ((access && isTokenExpired(access)) || (refresh && isTokenExpired(refresh))) {
     localStorage.removeItem(ACCESS_TOKEN_KEY)
     localStorage.removeItem(REFRESH_TOKEN_KEY)
     localStorage.removeItem(ADMIN_KEY)
