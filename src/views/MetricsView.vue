@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, watch, onMounted } from 'vue'
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend } from 'chart.js'
 import { Bar } from 'vue-chartjs'
 import { fetchMetricsRaw, parsePrometheusMetrics } from '@/api'
@@ -9,15 +9,6 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 const metrics = ref<Partial<MetricsSnapshot>>({})
 const loading = ref(true)
-
-onMounted(async () => {
-  try {
-    const raw = await fetchMetricsRaw()
-    metrics.value = parsePrometheusMetrics(raw)
-  } finally {
-    loading.value = false
-  }
-})
 
 const chartData = ref({
   labels: ['请求数', '缓存命中', '缓存未命中', '错误数'],
@@ -42,18 +33,29 @@ const chartOptions = {
   },
 }
 
-function updateChart() {
-  chartData.value.datasets[0].data = [
-    metrics.value.totalRequests ?? 0,
-    metrics.value.cacheHits ?? 0,
-    metrics.value.cacheMisses ?? 0,
-    metrics.value.errorCount ?? 0,
-  ]
-}
+// 监听 metrics 变化，整体替换 chartData 以触发 Vue 响应式
+watch(metrics, (newMetrics) => {
+  chartData.value = {
+    ...chartData.value,
+    datasets: [{
+      ...chartData.value.datasets[0],
+      data: [
+        newMetrics.totalRequests ?? 0,
+        newMetrics.cacheHits ?? 0,
+        newMetrics.cacheMisses ?? 0,
+        newMetrics.errorCount ?? 0,
+      ]
+    }]
+  }
+}, { deep: true })
 
-onMounted(() => {
-  const unwatch = setInterval(updateChart, 1000)
-  updateChart()
+onMounted(async () => {
+  try {
+    const raw = await fetchMetricsRaw()
+    metrics.value = parsePrometheusMetrics(raw)
+  } finally {
+    loading.value = false
+  }
 })
 </script>
 
