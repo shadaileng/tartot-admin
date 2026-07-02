@@ -434,3 +434,18 @@ export interface UpdateMenuRequest {
   isVisible?: boolean
   requireRole?: string | null
 }
+
+// ========== 页面管理 ==========
+
+export interface PageSectionEntry {
+  id: string
+  pageKey: string
+  sectionKey: string
+  label: string
+  visible: boolean
+  updatedAt: string
+}
+
+export interface PageSectionsResponse {
+  sections: PageSectionEntry[]
+}

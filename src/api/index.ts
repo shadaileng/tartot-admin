@@ -1,4 +1,4 @@
-import type { ServiceInfo, HealthResponse, LogListResponse, LogEntry, ReadingLogListResponse, ReadingLogEntry, MetricsSnapshot, ConfigResponse, UserListResponse, AdminListResponse, AdminEntry, CreateAdminRequest, UpdateAdminRequest, ResetPasswordRequest, ApiResponse, LevelDefinitionEntry, TaskDefinitionEntry, CreateTaskDefinitionRequest, UpdateTaskDefinitionRequest, UserStatsEntry, TrendResponse, AdminInviteListResponse, CheckinStatsResponse, FeedbackListResponse, FeedbackDetail, AuditLogListResponse } from '@/types'
+import type { ServiceInfo, HealthResponse, LogListResponse, LogEntry, ReadingLogListResponse, ReadingLogEntry, MetricsSnapshot, ConfigResponse, UserListResponse, AdminListResponse, AdminEntry, CreateAdminRequest, UpdateAdminRequest, ResetPasswordRequest, ApiResponse, LevelDefinitionEntry, TaskDefinitionEntry, CreateTaskDefinitionRequest, UpdateTaskDefinitionRequest, UserStatsEntry, TrendResponse, AdminInviteListResponse, CheckinStatsResponse, FeedbackListResponse, FeedbackDetail, AuditLogListResponse, PageSectionsResponse } from '@/types'
 import { useAuth } from '@/composables/useAuth'
 
 const BASE = import.meta.env.VITE_API_BASE_URL
@@ -440,4 +440,14 @@ export function fetchRoleMenus(role: string): Promise<{ menuIds: string[] }> {
 
 export function updateRoleMenus(role: string, menuIds: string[]): Promise<void> {
   return putRequest<void>(`/api/admin/menus/role/${role}`, { menuIds })
+}
+
+// ========== 页面管理 API ==========
+
+export function fetchPageSections(): Promise<PageSectionsResponse> {
+  return getRequest<PageSectionsResponse>('/api/admin/page-sections')
+}
+
+export function updatePageSection(id: string, visible: boolean): Promise<void> {
+  return putRequest<void>(`/api/admin/page-sections/${id}`, { visible: visible ? 1 : 0 })
 }
